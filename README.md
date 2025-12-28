@@ -87,10 +87,18 @@ From IndyDevDan's agentic coding approach:
 3. **Simple solutions** - Don't over-engineer
 4. **Parallel execution** - Multiple agents working simultaneously
 
+## Acknowledgments
+
+This project is inspired by [IndyDevDan's](https://www.youtube.com/@indydevdan) YouTube video on agentic coding workflows:
+
+**[Advanced Claude Code: Out-Of-Loop Agentic Coding & Parallel Execution](https://www.youtube.com/watch?v=X2ciJedw2vU&t=310s)**
+
+All code and documentation in this project were generated entirely by **Claude Code** powered by **Claude Opus 4.5** (Anthropic's frontier model).
+
 ## License
 
 MIT
 
 ---
 
-*Inspired by [IndyDevDan's](https://www.youtube.com/@indydevdan) agentic coding workflow. Built with [Claude Code](https://claude.ai/code).*
+*Built entirely with [Claude Code](https://claude.ai/code) and Claude Opus 4.5.*
