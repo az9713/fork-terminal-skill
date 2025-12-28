@@ -40,6 +40,7 @@ Result: A new terminal opens with Claude Code working on the bug independently.
 | [Quick Start Guide](docs/QUICK_START.md) | 10 hands-on tutorials |
 | [User Guide](docs/USER_GUIDE.md) | Complete reference |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Technical documentation |
+| [Git Worktree Tutorial](docs/GIT_WORKTREE_TUTORIAL.md) | Learn git worktrees for isolated agent work |
 | [CLAUDE.md](CLAUDE.md) | Guidance for Claude Code |
 
 ## Usage (Natural Language)
