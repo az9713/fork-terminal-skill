@@ -158,6 +158,10 @@ The skill automatically detects and uses the best available terminal:
 | **macOS** | Terminal.app (via osascript) | - |
 | **Linux** | gnome-terminal, konsole, xfce4-terminal | xterm |
 
+**Windows Shell Selection:**
+- **Raw commands** (`--type raw`): Uses **cmd.exe** - supports `&&`, `||`, and other cmd operators
+- **Claude/Gemini commands**: Uses **PowerShell** - supports output logging with `Tee-Object`
+
 **Windows - Check Windows Terminal:**
 ```bash
 wt --version
@@ -229,6 +233,8 @@ Or use slash commands:
 /fork claude "fix the login bug"
 
 /fork raw "npm run build"
+
+/fork raw "echo Hello && pause"   # Windows: && works because raw uses cmd.exe
 
 /fork status
 ```

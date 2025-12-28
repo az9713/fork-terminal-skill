@@ -110,8 +110,14 @@ The skill automatically detects the platform and uses the appropriate terminal:
 
 **Windows example:**
 ```python
+# Claude/Gemini commands use PowerShell (for Tee-Object logging)
 ["wt", "new-tab", "-d", cwd, "--title", title, "powershell", "-NoExit", "-Command", command]
-# Use "new-window" instead of "new-tab" with --new-window flag
+
+# Raw commands use cmd.exe (supports && syntax)
+["wt", "new-tab", "-d", cwd, "--title", title, "cmd", "/k", command]
+
+# Force new window with -w -1 flag
+["wt", "-w", "-1", "new-tab", "-d", cwd, "--title", title, ...]
 ```
 
 **macOS example:**

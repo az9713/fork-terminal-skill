@@ -458,14 +458,17 @@ def find_terminal_executable():
              ("gnome-terminal", "gnome-terminal") on Linux
     """
 
-def spawn_terminal(command, cwd, title, output_file, new_window=False):
+def spawn_terminal(command, cwd, title, output_file, new_window=False, use_cmd=False):
     """
     Cross-platform dispatcher - calls platform-specific function.
+    use_cmd: If True, use cmd.exe instead of PowerShell on Windows.
     """
 
-def spawn_terminal_windows(command, cwd, title, output_file, new_window=False):
+def spawn_terminal_windows(command, cwd, title, output_file, new_window=False, use_cmd=False):
     """
     Windows: Uses wt.exe (new-tab or new-window) or PowerShell fallback.
+    use_cmd: If True, spawns cmd.exe (for raw commands with && syntax).
+             If False, spawns PowerShell (for Claude/Gemini with Tee-Object logging).
     """
 
 def spawn_terminal_macos(command, cwd, title, output_file):
@@ -486,7 +489,8 @@ def build_claude_command(task, model, context_file, skip_permissions):
 
 **Escape Helpers:**
 ```python
-def escape_for_powershell(text):   # Windows PowerShell
+def escape_for_cmd(text):           # Windows cmd.exe
+def escape_for_powershell(text):    # Windows PowerShell
 def escape_for_bash(text):          # macOS/Linux
 def escape_for_applescript(text):   # macOS AppleScript
 ```
@@ -1027,14 +1031,22 @@ UV will install these automatically when running.
 
 **Windows** - In `spawn_terminal_windows()`:
 ```python
-# Keep terminal open (current)
-"powershell", "-NoExit", "-Command", command
+# Shell selection (use_cmd parameter)
+if use_cmd:
+    shell_args = ["cmd", "/k", command]      # For raw commands (supports &&)
+else:
+    shell_args = ["powershell", "-NoExit", "-Command", command]  # For Claude/Gemini
 
-# Close terminal after command (remove -NoExit)
-"powershell", "-Command", command
+# Keep terminal open
+"powershell", "-NoExit", "-Command", command   # PowerShell
+"cmd", "/k", command                           # cmd.exe
 
-# Force new window instead of tab
-tab_or_window = "new-window"  # Instead of "new-tab"
+# Close terminal after command
+"powershell", "-Command", command              # PowerShell (remove -NoExit)
+"cmd", "/c", command                           # cmd.exe (use /c instead of /k)
+
+# Force new window instead of tab (use -w -1)
+[terminal_path, "-w", "-1", "new-tab", ...]   # Opens in new window
 ```
 
 **macOS** - In `spawn_terminal_macos()`:
