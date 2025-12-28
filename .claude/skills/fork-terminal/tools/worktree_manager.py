@@ -243,11 +243,26 @@ def remove_worktree(worktree_path: str, force: bool = False, cwd: str = None) ->
     success, stdout, stderr = run_git_command(cmd, git_root)
 
     if success:
-        return {
+        result = {
             "success": True,
             "removed": worktree_path,
             "message": f"Worktree {worktree_path} removed"
         }
+
+        # Clean up empty parent worktrees directory
+        worktrees_dir = get_worktrees_dir(git_root)
+        if worktrees_dir.exists() and worktrees_dir.is_dir():
+            # Check if directory is empty (no files or subdirectories)
+            try:
+                if not any(worktrees_dir.iterdir()):
+                    worktrees_dir.rmdir()
+                    result["parent_cleaned"] = True
+                    result["message"] += f" (empty parent folder {worktrees_dir} also removed)"
+            except OSError:
+                # Directory not empty or permission issue, ignore
+                pass
+
+        return result
     else:
         return {
             "success": False,
