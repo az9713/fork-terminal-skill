@@ -56,8 +56,16 @@ Complete technical reference for developers who want to understand, modify, or e
                                           ▼
                               ┌───────────────────┐
                               │  NEW TERMINAL     │
-                              │  (Windows Terminal│
-                              │   or PowerShell)  │
+                              │                   │
+                              │  Windows:         │
+                              │   wt.exe/PS       │
+                              │                   │
+                              │  macOS:           │
+                              │   Terminal.app    │
+                              │                   │
+                              │  Linux:           │
+                              │   gnome-terminal  │
+                              │   konsole, xterm  │
                               │                   │
                               │  Running:         │
                               │  - Claude Code    │
@@ -138,14 +146,28 @@ To add a dependency:
 # ///
 ```
 
-### 2.4 Windows Terminal
+### 2.4 Cross-Platform Terminal Support
 
-The skill uses Windows Terminal (wt.exe) for spawning. Key features:
+The skill supports multiple platforms with automatic terminal detection:
+
+| Platform | Primary Terminal | Fallback | Method |
+|----------|-----------------|----------|--------|
+| **Windows** | Windows Terminal (wt.exe) | PowerShell | `subprocess.run()` |
+| **macOS** | Terminal.app | - | AppleScript via `osascript` |
+| **Linux** | gnome-terminal, konsole, xfce4-terminal | xterm | `subprocess.run()` |
+
+**Windows Terminal features:**
 - Modern terminal with tabs
 - Better rendering than cmd.exe
-- Supports PowerShell and cmd
+- `--new-window` flag to force separate window
 
-If not available, falls back to PowerShell's Start-Process.
+**macOS Terminal.app:**
+- Controlled via AppleScript
+- Always opens new windows
+
+**Linux terminals:**
+- Detected in priority order
+- Different CLI flags per terminal
 
 ---
 
@@ -423,27 +445,50 @@ This keeps context windows focused on relevant information.
 
 ### 6.1 fork_terminal.py
 
-**Purpose:** Spawn new terminal windows
+**Purpose:** Cross-platform terminal spawning
 
 **Key Functions:**
 
 ```python
 def find_terminal_executable():
     """
-    Detects the best available terminal.
-    Returns: ("wt", "path/to/wt.exe") or ("powershell", "powershell")
+    Detects the best available terminal for current platform.
+    Returns: ("wt", "path/to/wt.exe") on Windows
+             ("osascript", "osascript") on macOS
+             ("gnome-terminal", "gnome-terminal") on Linux
     """
 
-def spawn_terminal_windows(command, cwd, title, output_file):
+def spawn_terminal(command, cwd, title, output_file, new_window=False):
     """
-    Actually opens the new terminal.
-    Uses subprocess to call wt.exe or PowerShell.
+    Cross-platform dispatcher - calls platform-specific function.
+    """
+
+def spawn_terminal_windows(command, cwd, title, output_file, new_window=False):
+    """
+    Windows: Uses wt.exe (new-tab or new-window) or PowerShell fallback.
+    """
+
+def spawn_terminal_macos(command, cwd, title, output_file):
+    """
+    macOS: Uses AppleScript via osascript to open Terminal.app.
+    """
+
+def spawn_terminal_linux(command, cwd, title, output_file):
+    """
+    Linux: Supports gnome-terminal, konsole, xfce4-terminal, xterm.
     """
 
 def build_claude_command(task, model, context_file, skip_permissions):
     """
     Constructs: claude --model X "task"
     """
+```
+
+**Escape Helpers:**
+```python
+def escape_for_powershell(text):   # Windows PowerShell
+def escape_for_bash(text):          # macOS/Linux
+def escape_for_applescript(text):   # macOS AppleScript
 ```
 
 **Input:** Command-line arguments
@@ -454,6 +499,7 @@ def build_claude_command(task, model, context_file, skip_permissions):
 --cwd "path"               # Working directory
 --with-context "file"      # Context file
 --no-output                # Skip logging
+--new-window               # Force new window (Windows only)
 ```
 
 **Output:** JSON
@@ -462,9 +508,11 @@ def build_claude_command(task, model, context_file, skip_permissions):
   "success": true,
   "task_id": "abc123",
   "fork_type": "claude",
+  "platform": "Windows",
+  "new_window": false,
   "command_executed": "claude --model ... \"...\"",
   "output_file": "logs/forks/...",
-  "message": "Forked claude agent spawned successfully"
+  "message": "Forked claude agent spawned successfully on Windows"
 }
 ```
 
@@ -779,14 +827,33 @@ Before committing changes:
 
 #### Terminal doesn't open
 
-**Cause:** Windows Terminal not found, PowerShell restricted
-**Debug:**
+**Windows:**
 ```bash
 # Check Windows Terminal
 where wt
 
 # Test PowerShell
 powershell -Command "echo test"
+
+# Check execution policy
+powershell -Command "Get-ExecutionPolicy"
+```
+
+**macOS:**
+```bash
+# Test osascript
+osascript -e 'tell application "Terminal" to activate'
+
+# Check for automation permissions in System Preferences
+```
+
+**Linux:**
+```bash
+# Check available terminals
+which gnome-terminal konsole xfce4-terminal xterm
+
+# Check display is available
+echo $DISPLAY
 ```
 
 #### "Not in git repository" for worktrees
@@ -958,18 +1025,31 @@ UV will install these automatically when running.
 
 ### 11.3 Changing Terminal Behavior
 
-In fork_terminal.py, modify `spawn_terminal_windows()`:
-
+**Windows** - In `spawn_terminal_windows()`:
 ```python
 # Keep terminal open (current)
-"cmd", "/k", command
+"powershell", "-NoExit", "-Command", command
+
+# Close terminal after command (remove -NoExit)
+"powershell", "-Command", command
+
+# Force new window instead of tab
+tab_or_window = "new-window"  # Instead of "new-tab"
+```
+
+**macOS** - In `spawn_terminal_macos()`:
+```python
+# Terminal always stays open after "do script"
+# To close, you'd need to add: do script "cmd; exit"
+```
+
+**Linux** - In `spawn_terminal_linux()`:
+```python
+# Keep terminal open (current)
+f'{command}; exec bash'
 
 # Close terminal after command
-"cmd", "/c", command
-
-# Different PowerShell behavior
-"-NoExit"  # Keep open
-# (remove for auto-close)
+command  # Without "; exec bash"
 ```
 
 ### 11.4 Adding Environment Variables
@@ -1075,7 +1155,7 @@ Types:
 | File | Lines | Purpose |
 |------|-------|---------|
 | SKILL.md | ~300 | Central skill definition |
-| tools/fork_terminal.py | ~250 | Terminal spawning |
+| tools/fork_terminal.py | ~630 | Cross-platform terminal spawning |
 | tools/task_registry.py | ~200 | Task tracking |
 | tools/context_builder.py | ~150 | Context handoff |
 | tools/worktree_manager.py | ~200 | Git worktrees |
@@ -1084,6 +1164,16 @@ Types:
 | cookbook/claude-code.md | ~150 | Claude CLI reference |
 | cookbook/presets.md | ~200 | Preset definitions |
 | cookbook/worktree-guide.md | ~200 | Worktree patterns |
+
+### Platform-Specific Functions in fork_terminal.py
+
+| Function | Lines | Platform |
+|----------|-------|----------|
+| `find_terminal_executable()` | 62-109 | All |
+| `spawn_terminal_windows()` | 140-228 | Windows |
+| `spawn_terminal_macos()` | 231-296 | macOS |
+| `spawn_terminal_linux()` | 299-391 | Linux |
+| `spawn_terminal()` | 394-428 | Dispatcher |
 
 ## Appendix B: Technology Links
 

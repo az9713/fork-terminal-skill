@@ -98,14 +98,31 @@ uv run .claude/skills/fork-terminal/tools/worktree_manager.py list
 
 ## Key Technical Details
 
-### Windows Terminal Spawning
+### Cross-Platform Terminal Spawning
 
-The skill uses Windows Terminal (wt.exe) as the primary method:
+The skill automatically detects the platform and uses the appropriate terminal:
+
+| Platform | Primary | Fallback | Method |
+|----------|---------|----------|--------|
+| Windows | Windows Terminal (wt.exe) | PowerShell | subprocess |
+| macOS | Terminal.app | - | osascript |
+| Linux | gnome-terminal, konsole | xterm | subprocess |
+
+**Windows example:**
 ```python
 ["wt", "new-tab", "-d", cwd, "--title", title, "powershell", "-NoExit", "-Command", command]
+# Use "new-window" instead of "new-tab" with --new-window flag
 ```
 
-Falls back to PowerShell if Windows Terminal not available.
+**macOS example:**
+```python
+osascript -e 'tell application "Terminal" to do script "cd ... && command"'
+```
+
+**Linux example:**
+```python
+["gnome-terminal", "--working-directory", cwd, "--", "bash", "-c", "command; exec bash"]
+```
 
 ### Model Tier Mapping
 
@@ -124,7 +141,9 @@ All tools output JSON for agent consumption:
 {
   "success": true,
   "task_id": "abc123",
-  "message": "Forked agent spawned successfully"
+  "platform": "Windows",
+  "new_window": false,
+  "message": "Forked agent spawned successfully on Windows"
 }
 ```
 
@@ -183,11 +202,13 @@ uv run .claude/skills/fork-terminal/tools/task_registry.py status
 
 ## Error Handling
 
-| Error | Resolution |
-|-------|------------|
-| Windows Terminal not found | Automatic fallback to PowerShell |
-| Not in git repo (worktree) | Inform user, skip worktree creation |
-| Task spawn fails | Report error, don't register task |
+| Error | Platform | Resolution |
+|-------|----------|------------|
+| Windows Terminal not found | Windows | Automatic fallback to PowerShell |
+| osascript permission denied | macOS | User must grant automation permission |
+| No terminal found | Linux | Falls back to xterm |
+| Not in git repo (worktree) | All | Inform user, skip worktree creation |
+| Task spawn fails | All | Report error, don't register task |
 
 ## Files to Read for Context
 

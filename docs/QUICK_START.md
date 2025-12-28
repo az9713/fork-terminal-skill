@@ -16,9 +16,10 @@ Before starting, make sure you have:
    - You should be able to run `claude` in your terminal
    - If not, visit: https://claude.ai/code
 
-2. **Windows Terminal** (recommended but optional)
-   - Modern Windows 10/11 should have this
-   - The skill falls back to PowerShell if not available
+2. **A Terminal** (platform-specific)
+   - **Windows:** Windows Terminal (recommended) or PowerShell
+   - **macOS:** Terminal.app (built-in)
+   - **Linux:** gnome-terminal, konsole, xfce4-terminal, or xterm
 
 3. **Python with UV** (for running tool scripts)
    - Install UV: `pip install uv`
@@ -474,8 +475,18 @@ Now that you've completed all 10 tutorials, you can:
 Install UV: `pip install uv` or visit https://astral.sh/uv
 
 ### No new terminal opens
-- Make sure Windows Terminal is installed
+
+**Windows:**
+- Install Windows Terminal from Microsoft Store
 - The skill falls back to PowerShell if not found
+
+**macOS:**
+- Terminal.app should be built-in
+- Check System Preferences > Security & Privacy > Automation
+
+**Linux:**
+- Install a terminal: `sudo apt install gnome-terminal`
+- Check that X11/Wayland is running
 
 ### "Not in a git repository" for worktrees
 - Worktrees require a git repo

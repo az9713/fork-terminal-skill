@@ -148,16 +148,32 @@ Or on Unix/Mac:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-#### Windows Terminal (Recommended)
+#### Terminal (Platform-Specific)
 
-Windows Terminal provides the best experience. It's usually pre-installed on Windows 10/11.
+The skill automatically detects and uses the best available terminal:
 
-**To check:** Type:
+| Platform | Primary | Fallback |
+|----------|---------|----------|
+| **Windows** | Windows Terminal (wt.exe) | PowerShell |
+| **macOS** | Terminal.app (via osascript) | - |
+| **Linux** | gnome-terminal, konsole, xfce4-terminal | xterm |
+
+**Windows - Check Windows Terminal:**
 ```bash
 wt --version
 ```
 
-If not available, the skill automatically falls back to PowerShell.
+**macOS - Check osascript:**
+```bash
+osascript -e 'return "ok"'
+```
+
+**Linux - Check available terminals:**
+```bash
+which gnome-terminal konsole xfce4-terminal xterm
+```
+
+If the primary terminal is not available, the skill automatically falls back to alternatives.
 
 ### 3.2 Project Setup
 
@@ -240,13 +256,17 @@ When you fork, you get a JSON response like:
   "fork_type": "claude",
   "task": "fix the login bug",
   "model": "sonnet",
-  "message": "Forked claude agent spawned successfully"
+  "platform": "Windows",
+  "new_window": false,
+  "message": "Forked claude agent spawned successfully on Windows"
 }
 ```
 
 Key fields:
 - `success`: Whether the fork worked
 - `task_id`: Unique ID to track this task
+- `platform`: Operating system (Windows, Darwin, Linux)
+- `new_window`: Whether `--new-window` flag was used
 - `message`: Human-readable status
 
 ---
@@ -329,6 +349,21 @@ Doesn't save output to log files. Good for quick, throwaway commands.
 ```
 
 Adds `--dangerously-skip-permissions` to Claude. Only use for fully trusted automation.
+
+### 6.6 New Window (Windows Only)
+
+```
+/fork raw "my command" --new-window
+```
+
+Forces Windows Terminal to open a **new window** instead of a new **tab**.
+
+| Flag | Behavior |
+|------|----------|
+| (default) | Opens as a new tab in existing Windows Terminal |
+| `--new-window` | Opens as a separate window |
+
+**Note:** This flag only affects Windows Terminal. On macOS and Linux, terminals always open as new windows.
 
 ---
 
@@ -681,14 +716,35 @@ pip install uv
 
 ### Problem: No new terminal opens
 
-**Possible causes:**
+**Possible causes (by platform):**
+
+**Windows:**
 1. Windows Terminal not installed
-2. PowerShell restricted
+2. PowerShell execution policy restricted
+
+**macOS:**
+1. Terminal.app permissions not granted
+2. osascript blocked by security settings
+
+**Linux:**
+1. No supported terminal emulator installed
+2. Display server not running (for headless systems)
 
 **Solutions:**
+
+**Windows:**
 - Install Windows Terminal from Microsoft Store
 - The skill should fall back to PowerShell automatically
-- Check if PowerShell execution policy allows scripts
+- Check execution policy: `Get-ExecutionPolicy`
+
+**macOS:**
+- Grant Terminal access in System Preferences > Security & Privacy > Privacy > Automation
+- Test manually: `osascript -e 'tell application "Terminal" to activate'`
+
+**Linux:**
+- Install a terminal: `sudo apt install gnome-terminal` (Ubuntu/Debian)
+- Ensure X11/Wayland is running
+- Check which terminal is available: `which gnome-terminal konsole xterm`
 
 ### Problem: "Not in a git repository" when using --worktree
 
