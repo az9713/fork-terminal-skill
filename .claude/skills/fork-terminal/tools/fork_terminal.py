@@ -142,7 +142,8 @@ def spawn_terminal_windows(
     cwd: str,
     title: str = "Forked Agent",
     output_file: str = None,
-    new_window: bool = False
+    new_window: bool = False,
+    use_cmd: bool = False
 ) -> dict:
     """
     Spawn a new terminal window on Windows with the given command.
@@ -153,6 +154,7 @@ def spawn_terminal_windows(
         title: Title for the terminal window/tab
         output_file: Optional file to capture output (for logging)
         new_window: If True, force a new window instead of a tab (Windows Terminal only)
+        use_cmd: If True, use cmd.exe instead of PowerShell (for raw commands with && syntax)
 
     Returns:
         Dict with spawn result including success status
@@ -169,6 +171,12 @@ def spawn_terminal_windows(
     try:
         if terminal_type == "wt":
             # Windows Terminal: use -w -1 to force new window, otherwise new-tab
+            # Choose shell: cmd.exe for raw commands (supports &&), PowerShell for others
+            if use_cmd:
+                shell_args = ["cmd", "/k", command_with_log]
+            else:
+                shell_args = ["powershell", "-NoExit", "-Command", command_with_log]
+
             if new_window:
                 # -w -1 means "create a new window" in Windows Terminal
                 spawn_cmd = [
@@ -177,16 +185,14 @@ def spawn_terminal_windows(
                     "new-tab",
                     "-d", cwd,
                     "--title", title[:50],
-                    "powershell", "-NoExit", "-Command", command_with_log
-                ]
+                ] + shell_args
             else:
                 spawn_cmd = [
                     terminal_path,
                     "new-tab",
                     "-d", cwd,
                     "--title", title[:50],
-                    "powershell", "-NoExit", "-Command", command_with_log
-                ]
+                ] + shell_args
 
             result = subprocess.run(
                 spawn_cmd,
@@ -406,7 +412,8 @@ def spawn_terminal(
     cwd: str,
     title: str = "Forked Agent",
     output_file: str = None,
-    new_window: bool = False
+    new_window: bool = False,
+    use_cmd: bool = False
 ) -> dict:
     """
     Cross-platform terminal spawner - dispatches to platform-specific implementation.
@@ -417,6 +424,7 @@ def spawn_terminal(
         title: Title for the terminal window/tab
         output_file: Optional file to capture output (for logging)
         new_window: If True, force new window instead of tab (Windows only)
+        use_cmd: If True, use cmd.exe instead of PowerShell on Windows (for raw commands)
 
     Returns:
         Dict with spawn result including success status
@@ -424,7 +432,7 @@ def spawn_terminal(
     system = platform.system()
 
     if system == "Windows":
-        return spawn_terminal_windows(command, cwd, title, output_file, new_window)
+        return spawn_terminal_windows(command, cwd, title, output_file, new_window, use_cmd)
     elif system == "Darwin":
         return spawn_terminal_macos(command, cwd, title, output_file)
     elif system == "Linux":
@@ -611,8 +619,11 @@ Platform Support:
         command = args.task
         title = f"CLI: {args.task[:40]}..."
 
+    # For raw commands on Windows, use cmd.exe directly (supports && syntax)
+    use_cmd = (args.type == "raw" and platform.system() == "Windows")
+
     # Spawn terminal (cross-platform)
-    result = spawn_terminal(command, cwd, title, output_file, args.new_window)
+    result = spawn_terminal(command, cwd, title, output_file, args.new_window, use_cmd)
 
     # Build output for agent consumption (agentic return values)
     output = {
