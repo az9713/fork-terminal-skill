@@ -168,15 +168,25 @@ def spawn_terminal_windows(
 
     try:
         if terminal_type == "wt":
-            # Windows Terminal: new-tab or new-window based on flag
-            tab_or_window = "new-window" if new_window else "new-tab"
-            spawn_cmd = [
-                terminal_path,
-                tab_or_window,
-                "-d", cwd,
-                "--title", title[:50],
-                "powershell", "-NoExit", "-Command", command_with_log
-            ]
+            # Windows Terminal: use -w -1 to force new window, otherwise new-tab
+            if new_window:
+                # -w -1 means "create a new window" in Windows Terminal
+                spawn_cmd = [
+                    terminal_path,
+                    "-w", "-1",
+                    "new-tab",
+                    "-d", cwd,
+                    "--title", title[:50],
+                    "powershell", "-NoExit", "-Command", command_with_log
+                ]
+            else:
+                spawn_cmd = [
+                    terminal_path,
+                    "new-tab",
+                    "-d", cwd,
+                    "--title", title[:50],
+                    "powershell", "-NoExit", "-Command", command_with_log
+                ]
 
             result = subprocess.run(
                 spawn_cmd,
