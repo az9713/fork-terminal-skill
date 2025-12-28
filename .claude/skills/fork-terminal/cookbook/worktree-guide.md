@@ -38,11 +38,9 @@ Work is done on proper branches:
 
 ## Creating a Worktree Fork
 
-### Via Skill Command
+### Via Natural Language
 
-```bash
-/fork claude "implement feature X" --worktree
-```
+Say: "Fork a Claude agent in a worktree to implement feature X"
 
 This will:
 1. Create a new branch: `fork/feature-x-{timestamp}`
@@ -137,8 +135,8 @@ git branch -d fork/feature-a
 
 ### 1. Use Descriptive Branch Names
 
-```bash
-/fork claude "fix auth bug" --worktree
+Say: "Fork a Claude agent in a worktree to fix auth bug"
+```
 # Creates: fork/fix-auth-bug-{timestamp}
 ```
 
@@ -207,10 +205,10 @@ git worktree remove --force path/to/worktree
 
 ```bash
 # 1. Start a complex refactor in worktree
-/fork claude "refactor auth module to use dependency injection" --worktree
+# Say: "Fork a Claude agent in a worktree to refactor auth module to use dependency injection"
 
 # 2. Check status
-/fork status
+# Say: "Show fork status"
 # Shows: fork-refactor-auth-20241227 (running)
 
 # 3. When complete, review
