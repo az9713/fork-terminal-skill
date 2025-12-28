@@ -4,16 +4,22 @@
 # dependencies = []
 # ///
 """
-Fork Terminal - Windows-compatible terminal spawner for Claude Code skills.
+Fork Terminal - Cross-platform terminal spawner for Claude Code skills.
 
 Spawns new terminal windows to run Claude Code, Gemini CLI, or raw CLI commands.
-Supports Windows Terminal (wt.exe) with PowerShell fallback.
+Supports Windows, macOS, and Linux.
+
+Platform Support:
+    - Windows: Windows Terminal (wt.exe) or PowerShell fallback
+    - macOS: Terminal.app via osascript (AppleScript)
+    - Linux: gnome-terminal, konsole, xfce4-terminal, or xterm
 
 Usage:
     uv run tools/fork_terminal.py --type claude --task "your task" --cwd "C:\\path"
     uv run tools/fork_terminal.py --type gemini --task "your task" --model haiku
     uv run tools/fork_terminal.py --type raw --task "dir /s" --cwd "."
     uv run tools/fork_terminal.py --type claude --task "fix bug" --with-context context.md
+    uv run tools/fork_terminal.py --type raw --task "echo hello" --new-window
 
 Examples:
     # Spawn Claude Code with a task
@@ -24,6 +30,9 @@ Examples:
 
     # Spawn with specific model
     uv run tools/fork_terminal.py --type claude --task "complex analysis" --model opus
+
+    # Force new window instead of tab (Windows Terminal only)
+    uv run tools/fork_terminal.py --type raw --task "echo hello" --new-window
 """
 
 import subprocess
@@ -31,6 +40,7 @@ import sys
 import os
 import json
 import argparse
+import platform
 from datetime import datetime
 from pathlib import Path
 import uuid
@@ -51,32 +61,56 @@ LOGS_DIR = SKILL_DIR / "logs" / "forks"
 
 def find_terminal_executable() -> tuple[str, str]:
     """
-    Determine the best available terminal on Windows.
-
-    Priority order:
-    1. Windows Terminal (wt.exe) - modern, best UX, supports tabs
-    2. PowerShell - universal fallback
+    Determine the best available terminal for the current platform.
 
     Returns:
         Tuple of (terminal_type, executable_path)
+
+    Platform behavior:
+        - Windows: Windows Terminal (wt.exe) > PowerShell
+        - macOS: osascript (for Terminal.app)
+        - Linux: gnome-terminal > konsole > xfce4-terminal > xterm
     """
-    # Check for Windows Terminal in standard location
-    wt_path = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps\wt.exe")
-    if os.path.exists(wt_path):
-        return "wt", wt_path
+    system = platform.system()
 
-    # Check if wt is in PATH
-    wt_in_path = shutil.which("wt")
-    if wt_in_path:
-        return "wt", "wt"
+    if system == "Windows":
+        # Check for Windows Terminal in standard location
+        wt_path = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps\wt.exe")
+        if os.path.exists(wt_path):
+            return "wt", wt_path
 
-    # Fall back to PowerShell (always available on Windows)
-    return "powershell", "powershell"
+        # Check if wt is in PATH
+        wt_in_path = shutil.which("wt")
+        if wt_in_path:
+            return "wt", "wt"
+
+        # Fall back to PowerShell (always available on Windows)
+        return "powershell", "powershell"
+
+    elif system == "Darwin":  # macOS
+        # Use osascript to control Terminal.app
+        return "osascript", "osascript"
+
+    elif system == "Linux":
+        # Try common Linux terminal emulators in order of preference
+        terminals = [
+            ("gnome-terminal", "gnome-terminal"),
+            ("konsole", "konsole"),
+            ("xfce4-terminal", "xfce4-terminal"),
+            ("xterm", "xterm"),
+        ]
+        for term_type, term_cmd in terminals:
+            if shutil.which(term_cmd):
+                return term_type, term_cmd
+        # Ultimate fallback
+        return "xterm", "xterm"
+
+    else:
+        raise OSError(f"Unsupported platform: {system}")
 
 
 def escape_for_cmd(text: str) -> str:
     """Escape special characters for cmd.exe."""
-    # Escape quotes and special chars
     text = text.replace('"', '\\"')
     text = text.replace('%', '%%')
     return text
@@ -84,10 +118,22 @@ def escape_for_cmd(text: str) -> str:
 
 def escape_for_powershell(text: str) -> str:
     """Escape special characters for PowerShell."""
-    # Escape single quotes by doubling them
     text = text.replace("'", "''")
-    # Escape backticks
     text = text.replace("`", "``")
+    return text
+
+
+def escape_for_bash(text: str) -> str:
+    """Escape special characters for bash."""
+    text = text.replace("'", "'\\''")
+    text = text.replace('"', '\\"')
+    return text
+
+
+def escape_for_applescript(text: str) -> str:
+    """Escape special characters for AppleScript strings."""
+    text = text.replace('\\', '\\\\')
+    text = text.replace('"', '\\"')
     return text
 
 
@@ -95,7 +141,8 @@ def spawn_terminal_windows(
     command: str,
     cwd: str,
     title: str = "Forked Agent",
-    output_file: str = None
+    output_file: str = None,
+    new_window: bool = False
 ) -> dict:
     """
     Spawn a new terminal window on Windows with the given command.
@@ -105,6 +152,7 @@ def spawn_terminal_windows(
         cwd: Working directory for the new terminal
         title: Title for the terminal window/tab
         output_file: Optional file to capture output (for logging)
+        new_window: If True, force a new window instead of a tab (Windows Terminal only)
 
     Returns:
         Dict with spawn result including success status
@@ -113,24 +161,20 @@ def spawn_terminal_windows(
 
     # Add output redirection if output file specified
     if output_file:
-        # Ensure logs directory exists
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
-        # Append output capture using tee-like behavior
-        # Note: This captures what's visible in terminal
         command_with_log = f'{command} 2>&1 | Tee-Object -FilePath "{output_file}"'
     else:
         command_with_log = command
 
     try:
         if terminal_type == "wt":
-            # Windows Terminal: new tab with title and command
-            # Using cmd /k keeps the window open after command completes
-            # This allows user to see the result
+            # Windows Terminal: new-tab or new-window based on flag
+            tab_or_window = "new-window" if new_window else "new-tab"
             spawn_cmd = [
                 terminal_path,
-                "new-tab",
+                tab_or_window,
                 "-d", cwd,
-                "--title", title[:50],  # Limit title length
+                "--title", title[:50],
                 "powershell", "-NoExit", "-Command", command_with_log
             ]
 
@@ -141,7 +185,7 @@ def spawn_terminal_windows(
                 cwd=cwd
             )
         else:
-            # PowerShell fallback: Start-Process opens new window
+            # PowerShell fallback: Start-Process always opens new window
             escaped_cwd = escape_for_powershell(cwd)
             escaped_cmd = escape_for_powershell(command_with_log)
 
@@ -170,6 +214,170 @@ def spawn_terminal_windows(
             "stdout": result.stdout,
             "stderr": result.stderr,
             "returncode": result.returncode,
+            "output_file": output_file,
+            "new_window": new_window
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "terminal_type": terminal_type,
+            "command": command,
+            "cwd": cwd
+        }
+
+
+def spawn_terminal_macos(
+    command: str,
+    cwd: str,
+    title: str = "Forked Agent",
+    output_file: str = None
+) -> dict:
+    """
+    Spawn a new terminal window on macOS using AppleScript.
+
+    Args:
+        command: The command to execute in the new terminal
+        cwd: Working directory for the new terminal
+        title: Title for the terminal window
+        output_file: Optional file to capture output (for logging)
+
+    Returns:
+        Dict with spawn result including success status
+    """
+    # Add output redirection if output file specified
+    if output_file:
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        command_with_log = f'{command} 2>&1 | tee "{output_file}"'
+    else:
+        command_with_log = command
+
+    # Escape for AppleScript
+    escaped_cwd = escape_for_applescript(cwd)
+    escaped_cmd = escape_for_applescript(command_with_log)
+
+    # AppleScript to open Terminal.app and run command
+    applescript = f'''
+        tell application "Terminal"
+            activate
+            do script "cd \\"{escaped_cwd}\\" && {escaped_cmd}"
+        end tell
+    '''
+
+    try:
+        spawn_cmd = ["osascript", "-e", applescript]
+
+        result = subprocess.run(
+            spawn_cmd,
+            capture_output=True,
+            text=True
+        )
+
+        return {
+            "success": result.returncode == 0,
+            "terminal_type": "Terminal.app",
+            "command": command,
+            "cwd": cwd,
+            "title": title,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode,
+            "output_file": output_file
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "terminal_type": "Terminal.app",
+            "command": command,
+            "cwd": cwd
+        }
+
+
+def spawn_terminal_linux(
+    command: str,
+    cwd: str,
+    title: str = "Forked Agent",
+    output_file: str = None
+) -> dict:
+    """
+    Spawn a new terminal window on Linux.
+
+    Args:
+        command: The command to execute in the new terminal
+        cwd: Working directory for the new terminal
+        title: Title for the terminal window
+        output_file: Optional file to capture output (for logging)
+
+    Returns:
+        Dict with spawn result including success status
+    """
+    terminal_type, terminal_path = find_terminal_executable()
+
+    # Add output redirection if output file specified
+    if output_file:
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        command_with_log = f'{command} 2>&1 | tee "{output_file}"'
+    else:
+        command_with_log = command
+
+    # Escape command for bash
+    escaped_cmd = escape_for_bash(command_with_log)
+
+    try:
+        if terminal_type == "gnome-terminal":
+            # gnome-terminal uses -- to separate terminal args from command
+            spawn_cmd = [
+                terminal_path,
+                "--working-directory", cwd,
+                "--title", title[:50],
+                "--",
+                "bash", "-c", f'{command_with_log}; exec bash'
+            ]
+        elif terminal_type == "konsole":
+            # konsole uses --workdir and -e
+            spawn_cmd = [
+                terminal_path,
+                "--workdir", cwd,
+                "-e",
+                "bash", "-c", f'{command_with_log}; exec bash'
+            ]
+        elif terminal_type == "xfce4-terminal":
+            # xfce4-terminal uses --working-directory and -e
+            spawn_cmd = [
+                terminal_path,
+                "--working-directory", cwd,
+                "--title", title[:50],
+                "-e",
+                f'bash -c "{escaped_cmd}; exec bash"'
+            ]
+        else:
+            # xterm fallback
+            spawn_cmd = [
+                terminal_path,
+                "-T", title[:50],
+                "-e",
+                f'bash -c "cd {cwd} && {command_with_log}; exec bash"'
+            ]
+
+        result = subprocess.run(
+            spawn_cmd,
+            capture_output=True,
+            text=True,
+            cwd=cwd
+        )
+
+        return {
+            "success": result.returncode == 0,
+            "terminal_type": terminal_type,
+            "command": command,
+            "cwd": cwd,
+            "title": title,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode,
             "output_file": output_file
         }
 
@@ -178,6 +386,43 @@ def spawn_terminal_windows(
             "success": False,
             "error": str(e),
             "terminal_type": terminal_type,
+            "command": command,
+            "cwd": cwd
+        }
+
+
+def spawn_terminal(
+    command: str,
+    cwd: str,
+    title: str = "Forked Agent",
+    output_file: str = None,
+    new_window: bool = False
+) -> dict:
+    """
+    Cross-platform terminal spawner - dispatches to platform-specific implementation.
+
+    Args:
+        command: The command to execute in the new terminal
+        cwd: Working directory for the new terminal
+        title: Title for the terminal window/tab
+        output_file: Optional file to capture output (for logging)
+        new_window: If True, force new window instead of tab (Windows only)
+
+    Returns:
+        Dict with spawn result including success status
+    """
+    system = platform.system()
+
+    if system == "Windows":
+        return spawn_terminal_windows(command, cwd, title, output_file, new_window)
+    elif system == "Darwin":
+        return spawn_terminal_macos(command, cwd, title, output_file)
+    elif system == "Linux":
+        return spawn_terminal_linux(command, cwd, title, output_file)
+    else:
+        return {
+            "success": False,
+            "error": f"Unsupported platform: {system}",
             "command": command,
             "cwd": cwd
         }
@@ -213,15 +458,13 @@ def build_claude_command(
 
     # Add context file if provided (for context handoff)
     if context_file and os.path.exists(context_file):
-        # Read context and prepend to task
         try:
             with open(context_file, 'r', encoding='utf-8') as f:
                 context = f.read()
             task = f"{context}\n\n---\n\nTask: {task}"
         except Exception:
-            pass  # Silently continue without context if file read fails
+            pass
 
-    # Add the task as the prompt (interactive mode - no -p flag per Dan's guidance)
     # Escape quotes in task for shell
     escaped_task = task.replace('"', '\\"').replace("'", "''")
     cmd_parts.append(f'"{escaped_task}"')
@@ -259,7 +502,6 @@ def generate_task_id() -> str:
 def generate_output_filename(task: str, task_id: str) -> str:
     """Generate output log filename."""
     date_str = datetime.now().strftime("%Y-%m-%d")
-    # Sanitize task for filename
     safe_task = "".join(c if c.isalnum() or c in ('-', '_') else '-' for c in task[:30])
     safe_task = safe_task.strip('-').lower()
     return str(LOGS_DIR / f"{date_str}_{safe_task}_{task_id}.md")
@@ -267,13 +509,19 @@ def generate_output_filename(task: str, task_id: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fork Terminal - Spawn new terminal windows for AI agents or CLI commands",
+        description="Fork Terminal - Cross-platform terminal spawner for AI agents or CLI commands",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
     uv run tools/fork_terminal.py --type claude --task "analyze this codebase"
     uv run tools/fork_terminal.py --type raw --task "npm test"
     uv run tools/fork_terminal.py --type claude --task "fix bug" --model opus --with-context summary.md
+    uv run tools/fork_terminal.py --type raw --task "echo hello" --new-window
+
+Platform Support:
+    Windows: Windows Terminal (wt.exe) or PowerShell
+    macOS:   Terminal.app via osascript
+    Linux:   gnome-terminal, konsole, xfce4-terminal, or xterm
         """
     )
 
@@ -318,6 +566,11 @@ Examples:
         "--task-id",
         help="Specific task ID (auto-generated if not provided)"
     )
+    parser.add_argument(
+        "--new-window",
+        action="store_true",
+        help="Force opening a new window instead of a tab (Windows Terminal only)"
+    )
 
     args = parser.parse_args()
 
@@ -348,8 +601,8 @@ Examples:
         command = args.task
         title = f"CLI: {args.task[:40]}..."
 
-    # Spawn terminal
-    result = spawn_terminal_windows(command, cwd, title, output_file)
+    # Spawn terminal (cross-platform)
+    result = spawn_terminal(command, cwd, title, output_file, args.new_window)
 
     # Build output for agent consumption (agentic return values)
     output = {
@@ -359,10 +612,12 @@ Examples:
         "task": args.task,
         "model": args.model if args.type in ("claude", "gemini") else None,
         "cwd": cwd,
+        "platform": platform.system(),
         "command_executed": command,
         "output_file": output_file,
+        "new_window": args.new_window,
         "spawn_result": result,
-        "message": f"Forked {args.type} agent spawned successfully" if result.get("success") else f"Failed to spawn: {result.get('error', result.get('stderr', 'Unknown error'))}"
+        "message": f"Forked {args.type} agent spawned successfully on {platform.system()}" if result.get("success") else f"Failed to spawn: {result.get('error', result.get('stderr', 'Unknown error'))}"
     }
 
     # Pretty print JSON for agent to parse
