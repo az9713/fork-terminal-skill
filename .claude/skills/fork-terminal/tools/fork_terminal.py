@@ -164,15 +164,27 @@ def spawn_terminal_windows(
     # Add output redirection if output file specified
     if output_file:
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
-        command_with_log = f'{command} 2>&1 | Tee-Object -FilePath "{output_file}"'
+        # Use forward slashes for PowerShell compatibility
+        output_file_escaped = output_file.replace('\\', '/')
+        if use_cmd:
+            # For raw commands with logging: wrap cmd in PowerShell for Tee-Object support
+            # Use script block syntax and single quotes to avoid escaping issues
+            escaped_cmd = command.replace("'", "''")
+            command_with_log = f"& {{ cmd /c '{escaped_cmd}' }} 2>&1 | Tee-Object -FilePath '{output_file_escaped}'"
+            # Force PowerShell since we need Tee-Object
+            use_cmd_for_spawn = False
+        else:
+            command_with_log = f"{command} 2>&1 | Tee-Object -FilePath '{output_file_escaped}'"
+            use_cmd_for_spawn = False
     else:
         command_with_log = command
+        use_cmd_for_spawn = use_cmd
 
     try:
         if terminal_type == "wt":
             # Windows Terminal: use -w -1 to force new window, otherwise new-tab
             # Choose shell: cmd.exe for raw commands (supports &&), PowerShell for others
-            if use_cmd:
+            if use_cmd_for_spawn:
                 shell_args = ["cmd", "/k", command_with_log]
             else:
                 shell_args = ["powershell", "-NoExit", "-Command", command_with_log]
