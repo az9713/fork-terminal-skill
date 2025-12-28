@@ -91,7 +91,7 @@ From IndyDevDan's agentic coding approach:
 
 This project is inspired by [IndyDevDan's](https://www.youtube.com/@indydevdan) YouTube video on agentic coding workflows:
 
-**[Advanced Claude Code: Out-Of-Loop Agentic Coding & Parallel Execution](https://www.youtube.com/watch?v=X2ciJedw2vU&t=310s)**
+**[RAW Agentic Coding: ZERO to Agent SKILL](https://www.youtube.com/watch?v=X2ciJedw2vU&t=310s)**
 
 All code and documentation in this project were generated entirely by **Claude Code** powered by **Claude Opus 4.5** (Anthropic's frontier model).
 
