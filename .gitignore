@@ -1,1 +1,36 @@
-.ignore/
+# Claude Code local settings
+.claude/settings.local.json
+.ignore
+
+# Runtime data (auto-generated)
+.claude/skills/fork-terminal/data/forked-tasks.json
+
+# Fork output logs (auto-generated)
+.claude/skills/fork-terminal/logs/forks/*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.log
