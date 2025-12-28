@@ -25,10 +25,10 @@ task_template: |
   4. Commit with descriptive message starting with "fix:"
 ```
 
-**Usage:**
-```bash
-/fork bugfix "null pointer in user.email at src/auth.ts:42"
-/fork bugfix "login fails when email contains plus sign"
+**Usage (natural language):**
+```
+"Fork a bugfix agent for null pointer in user.email at src/auth.ts:42"
+"Fork a bugfix agent for login fails when email contains plus sign"
 ```
 
 **Best for:**
@@ -59,11 +59,11 @@ task_template: |
   Save findings to research/{date}_{topic}.md
 ```
 
-**Usage:**
-```bash
-/fork research "how authentication flows work in this codebase"
-/fork research "performance optimization opportunities"
-/fork research "security vulnerabilities in input handling"
+**Usage (natural language):**
+```
+"Fork a research agent to explore how authentication flows work in this codebase"
+"Fork a research agent to explore performance optimization opportunities"
+"Fork a research agent to explore security vulnerabilities in input handling"
 ```
 
 **Best for:**
@@ -97,10 +97,10 @@ task_template: |
   Do NOT skip or delete failing tests unless they are genuinely obsolete.
 ```
 
-**Usage:**
-```bash
-/fork tests
-/fork tests "focus on auth module tests"
+**Usage (natural language):**
+```
+"Fork to run tests"
+"Fork to run tests and focus on auth module"
 ```
 
 **Best for:**
@@ -134,10 +134,10 @@ task_template: |
   Reference line numbers when possible.
 ```
 
-**Usage:**
-```bash
-/fork review
-/fork review "review the auth module changes"
+**Usage (natural language):**
+```
+"Fork a review agent"
+"Fork a review agent to review the auth module changes"
 ```
 
 **Best for:**
@@ -169,10 +169,10 @@ task_template: |
   Commit with message starting with "refactor:"
 ```
 
-**Usage:**
-```bash
-/fork refactor "extract auth logic into separate service"
-/fork refactor "convert callbacks to async/await"
+**Usage (natural language):**
+```
+"Fork a refactor agent to extract auth logic into separate service"
+"Fork a refactor agent to convert callbacks to async/await"
 ```
 
 **Best for:**
@@ -204,10 +204,10 @@ task_template: |
   Documentation should be clear, concise, and accurate.
 ```
 
-**Usage:**
-```bash
-/fork docs "update README with new setup instructions"
-/fork docs "add API documentation for auth endpoints"
+**Usage (natural language):**
+```
+"Fork a docs agent to update README with new setup instructions"
+"Fork a docs agent to add API documentation for auth endpoints"
 ```
 
 **Best for:**
@@ -243,17 +243,17 @@ When a preset is invoked:
 
 ## Combining Presets with Flags
 
-Presets can be combined with flags:
+Presets can be combined with flags by mentioning them in natural language or using the tool directly:
 
-```bash
+```
 # Override model
-/fork bugfix "fix null pointer" --model opus
+"Fork a bugfix agent with opus to fix null pointer"
 
 # Add worktree to preset that doesn't have it
-/fork bugfix "risky fix" --worktree
+"Fork a bugfix agent in a worktree for risky fix"
 
 # Disable context on preset that has it
-/fork research "quick lookup" --no-context
+"Fork a research agent without context for quick lookup"
 ```
 
 Flags override preset defaults.

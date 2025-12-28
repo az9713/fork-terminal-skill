@@ -64,21 +64,23 @@ The skill doesn't load all documentation upfront. Instead:
 
 This keeps context windows focused.
 
-## Commands Reference
+## Usage Reference
 
-### User-Facing Commands
+### Natural Language (Skill Invocation)
 
-| Command | Purpose |
-|---------|---------|
-| `/fork claude <task>` | Spawn Claude Code in new terminal |
-| `/fork raw <command>` | Run CLI command in new terminal |
-| `/fork status` | Show running/completed tasks |
-| `/fork list` | List all tracked forks |
-| `/fork bugfix <desc>` | Preset: spawn bugfix agent |
-| `/fork research <topic>` | Preset: spawn research agent |
-| `/fork tests` | Preset: run and fix tests |
+The skill is triggered by natural language. Say things like:
 
-### Tool Scripts
+| Say This | What Happens |
+|----------|--------------|
+| "Fork a Claude agent to fix the bug" | Spawns Claude Code in new terminal |
+| "Fork a raw terminal to run npm test" | Runs CLI command in new terminal |
+| "Show fork status" | Shows running/completed tasks |
+| "List all forked tasks" | Lists all tracked forks |
+| "Fork a bugfix agent for the null pointer" | Preset: spawns bugfix agent |
+| "Fork a research agent to explore auth" | Preset: spawns research agent |
+| "Fork to run tests" | Preset: runs and fixes tests |
+
+### Tool Scripts (Direct Invocation)
 
 All tools are in `.claude/skills/fork-terminal/tools/` and run with `uv run`:
 
@@ -193,7 +195,9 @@ uv run .claude/skills/fork-terminal/tools/context_builder.py --task "test" --pre
 5. Register task in registry
 6. Confirm to user
 
-### When User Says "/fork status"
+### When User Asks for Fork Status
+
+User might say: "Show fork status", "What tasks are running?", "List forked agents"
 
 ```bash
 uv run .claude/skills/fork-terminal/tools/task_registry.py status

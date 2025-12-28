@@ -15,7 +15,7 @@ Instead of handling everything in one Claude Code session, you can:
 ## Quick Example
 
 ```
-You: /fork claude "fix the authentication bug in src/auth.ts" --model sonnet
+You: Fork a Claude agent to fix the authentication bug in src/auth.ts
 ```
 
 Result: A new terminal opens with Claude Code working on the bug independently.
@@ -42,16 +42,16 @@ Result: A new terminal opens with Claude Code working on the bug independently.
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Technical documentation |
 | [CLAUDE.md](CLAUDE.md) | Guidance for Claude Code |
 
-## Commands
+## Usage (Natural Language)
 
-| Command | Description |
-|---------|-------------|
-| `/fork claude <task>` | Spawn Claude in new terminal |
-| `/fork raw <command>` | Run CLI command in new terminal |
-| `/fork status` | Show running/completed tasks |
-| `/fork bugfix <desc>` | Preset for bug fixes |
-| `/fork research <topic>` | Preset for exploration |
-| `/fork tests` | Preset for running tests |
+| Say This | What Happens |
+|----------|--------------|
+| "Fork a Claude agent to [task]" | Spawn Claude in new terminal |
+| "Fork a raw terminal to run [command]" | Run CLI command in new terminal |
+| "Show fork status" | Show running/completed tasks |
+| "Fork a bugfix agent for [desc]" | Preset for bug fixes |
+| "Fork a research agent to explore [topic]" | Preset for exploration |
+| "Fork to run tests" | Preset for running tests |
 
 ## Project Structure
 

@@ -33,24 +33,23 @@ Activate this skill when the user:
 - Wants to run Claude Code or Gemini in a separate session
 - Needs parallel work on different tasks
 - Mentions "new window", "background task", "separate agent"
-- Uses `/fork` command
 - Wants to delegate routine tasks (bug fixes, tests, research)
 
-## Quick Reference
+## Quick Reference (Natural Language)
 
-| Command | Purpose |
-|---------|---------|
-| `/fork claude <task>` | Spawn Claude Code agent with task |
-| `/fork gemini <task>` | Spawn Gemini CLI (if enabled) |
-| `/fork raw <command>` | Run CLI command in new terminal |
-| `/fork status` | Show running/completed tasks |
-| `/fork list` | List all tracked forks |
-| `/fork kill <id>` | Terminate a running fork |
-| `/fork kill all` | Terminate all running forks |
-| `/fork bugfix <desc>` | Preset: spawn bugfix agent |
-| `/fork research <topic>` | Preset: spawn research agent |
-| `/fork tests` | Preset: run and fix tests |
-| `/fork review` | Preset: code review agent |
+| User Says | What Happens |
+|-----------|--------------|
+| "Fork a Claude agent to [task]" | Spawn Claude Code agent with task |
+| "Fork Gemini to [task]" | Spawn Gemini CLI (if enabled) |
+| "Fork a raw terminal to run [command]" | Run CLI command in new terminal |
+| "Show fork status" | Show running/completed tasks |
+| "List all forked tasks" | List all tracked forks |
+| "Kill fork [id]" | Terminate a running fork |
+| "Kill all forks" | Terminate all running forks |
+| "Fork a bugfix agent for [desc]" | Preset: spawn bugfix agent |
+| "Fork a research agent to explore [topic]" | Preset: spawn research agent |
+| "Fork to run tests" | Preset: run and fix tests |
+| "Fork a review agent" | Preset: code review agent |
 
 ## Flags
 
@@ -63,6 +62,7 @@ All commands support these flags:
 | `--worktree` | Create git worktree for isolation |
 | `--no-output` | Don't capture output to logs |
 | `--skip-permissions` | Add --dangerously-skip-permissions (trusted automation) |
+| `--new-window` | Force new window instead of tab (Windows Terminal only) |
 
 ## Instructions
 
@@ -88,24 +88,24 @@ Determine the fork type from user's message:
 
 If request is a management command (status, list, kill):
 
-**For `/fork status`:**
+**For "show fork status":**
 ```bash
 uv run tools/task_registry.py status
 ```
 
-**For `/fork list`:**
+**For "list forked tasks":**
 ```bash
 uv run tools/task_registry.py list
 ```
 
-**For `/fork kill <id>`:**
+**For "kill fork [id]":**
 ```bash
 uv run tools/task_registry.py update --id <id> --status failed --notes "Manually killed"
 ```
 Note: This marks the task as failed but doesn't actually terminate the terminal.
 Inform user they may need to close the terminal manually.
 
-**For `/fork kill all`:**
+**For "kill all forks":**
 ```bash
 uv run tools/task_registry.py clear --status running
 ```
@@ -198,7 +198,7 @@ Report back to the user:
 1. **Task ID** for tracking
 2. **Command** being executed
 3. **Output location** if capturing
-4. **How to check status** (`/fork status`)
+4. **How to check status** (say "show fork status")
 
 Example confirmation:
 ```
@@ -208,7 +208,7 @@ Forked Claude Code agent (task: abc123)
 - Working directory: C:\project
 - Output: logs/forks/2024-12-27_fix-null-pointer_abc123.md
 
-Check status with `/fork status` or `/fork list`
+Say "show fork status" or "list forked tasks" to check progress.
 ```
 
 ## Progressive Disclosure
@@ -252,7 +252,7 @@ From IndyDevDan's agentic coding philosophy:
 
 | File | Purpose |
 |------|---------|
-| `tools/fork_terminal.py` | Core Windows terminal spawning |
+| `tools/fork_terminal.py` | Core cross-platform terminal spawning |
 | `tools/task_registry.py` | Track running/completed tasks |
 | `tools/context_builder.py` | Build context handoff files |
 | `tools/worktree_manager.py` | Git worktree management |

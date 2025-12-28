@@ -625,15 +625,11 @@ task_template: |
   Your template here: {description}
 ```
 
-**Usage:** `/fork my-preset "description"`
-```
+**Usage:** Say "Fork my-preset agent for description"
 
 2. **Update SKILL.md** if needed (usually not required for presets)
 
-3. **Test:**
-```
-/fork my-preset "test description"
-```
+3. **Test:** Say "Fork my-preset agent for test description"
 
 ### 7.2 Adding a New Flag
 
@@ -788,17 +784,11 @@ uv run .claude/skills/fork-terminal/tools/worktree_manager.py list
    claude
    ```
 
-2. Test natural language:
+2. Test natural language in Claude Code:
    ```
-   "fork a terminal to run echo hello"
-   "spawn a claude agent to list files"
-   "check fork status"
-   ```
-
-3. Test slash commands:
-   ```
-   /fork raw "echo hello"
-   /fork status
+   "Fork a terminal to run echo hello"
+   "Spawn a Claude agent to list files"
+   "Show fork status"
    ```
 
 ### 8.4 Test Checklist
@@ -1166,11 +1156,11 @@ Types:
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| SKILL.md | ~300 | Central skill definition |
-| tools/fork_terminal.py | ~630 | Cross-platform terminal spawning |
-| tools/task_registry.py | ~200 | Task tracking |
-| tools/context_builder.py | ~150 | Context handoff |
-| tools/worktree_manager.py | ~200 | Git worktrees |
+| SKILL.md | ~270 | Central skill definition |
+| tools/fork_terminal.py | ~650 | Cross-platform terminal spawning |
+| tools/task_registry.py | ~390 | Task tracking |
+| tools/context_builder.py | ~300 | Context handoff |
+| tools/worktree_manager.py | ~330 | Git worktrees |
 | prompts/fork_summary_user_prompt.md | ~100 | How to generate context |
 | prompts/fork-summary.md | ~50 | Template for forked agent |
 | cookbook/claude-code.md | ~150 | Claude CLI reference |
@@ -1182,10 +1172,10 @@ Types:
 | Function | Lines | Platform |
 |----------|-------|----------|
 | `find_terminal_executable()` | 62-109 | All |
-| `spawn_terminal_windows()` | 140-228 | Windows |
-| `spawn_terminal_macos()` | 231-296 | macOS |
-| `spawn_terminal_linux()` | 299-391 | Linux |
-| `spawn_terminal()` | 394-428 | Dispatcher |
+| `spawn_terminal_windows()` | 140-244 | Windows |
+| `spawn_terminal_macos()` | 247-312 | macOS |
+| `spawn_terminal_linux()` | 315-407 | Linux |
+| `spawn_terminal()` | 410-446 | Dispatcher |
 
 ## Appendix B: Technology Links
 

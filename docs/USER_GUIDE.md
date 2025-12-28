@@ -227,16 +227,16 @@ When you're in a Claude Code session, you can use natural language:
 "Delegate this task to a new agent: update the README"
 ```
 
-Or use slash commands:
+More examples:
 
 ```
-/fork claude "fix the login bug"
+"Fork a Claude agent to fix the login bug"
 
-/fork raw "npm run build"
+"Fork a raw terminal to run npm run build"
 
-/fork raw "echo Hello && pause"   # Windows: && works because raw uses cmd.exe
+"Fork raw: echo Hello && pause"   # Windows: && works because raw uses cmd.exe
 
-/fork status
+"Show fork status"
 ```
 
 ### 4.2 Direct Tool Usage
@@ -277,46 +277,48 @@ Key fields:
 
 ---
 
-## 5. Commands Reference
+## 5. Natural Language Reference
 
 ### 5.1 Fork Commands
 
-| Command | Description |
-|---------|-------------|
-| `/fork claude <task>` | Spawn Claude Code with a task |
-| `/fork gemini <task>` | Spawn Gemini CLI (if enabled) |
-| `/fork raw <command>` | Run a CLI command |
+| Say This | What Happens |
+|----------|--------------|
+| "Fork a Claude agent to [task]" | Spawn Claude Code with a task |
+| "Fork Gemini to [task]" | Spawn Gemini CLI (if enabled) |
+| "Fork a raw terminal to run [command]" | Run a CLI command |
 
 ### 5.2 Management Commands
 
-| Command | Description |
-|---------|-------------|
-| `/fork status` | Show summary of all tasks |
-| `/fork list` | List all tracked forks |
-| `/fork kill <id>` | Mark a task as failed/killed |
-| `/fork kill all` | Mark all running tasks as failed |
+| Say This | What Happens |
+|----------|--------------|
+| "Show fork status" | Show summary of all tasks |
+| "List all forked tasks" | List all tracked forks |
+| "Kill fork [id]" | Mark a task as failed/killed |
+| "Kill all forks" | Mark all running tasks as failed |
 
 ### 5.3 Preset Commands
 
-| Command | Description |
-|---------|-------------|
-| `/fork bugfix <description>` | Quick bug fix agent (haiku model) |
-| `/fork research <topic>` | Deep research agent (opus model) |
-| `/fork tests` | Run and fix tests (haiku model) |
-| `/fork review` | Code review agent (sonnet model) |
+| Say This | What Happens |
+|----------|--------------|
+| "Fork a bugfix agent for [description]" | Quick bug fix agent (haiku model) |
+| "Fork a research agent to explore [topic]" | Deep research agent (opus model) |
+| "Fork to run tests" | Run and fix tests (haiku model) |
+| "Fork a review agent" | Code review agent (sonnet model) |
 
 ---
 
 ## 6. Flags & Options
 
-Flags modify how forks behave. Add them after the task description.
+Flags modify how forks behave. Use them with direct tool invocation.
 
 ### 6.1 Model Selection
 
+```bash
+uv run .../fork_terminal.py --type claude --task "complex task" --model opus
+uv run .../fork_terminal.py --type claude --task "quick fix" --model haiku
 ```
-/fork claude "complex task" --model opus
-/fork claude "quick fix" --model haiku
-```
+
+Or say: "Fork a Claude agent with opus to do complex task"
 
 | Model | Speed | Capability | Best For |
 |-------|-------|------------|----------|
@@ -326,41 +328,49 @@ Flags modify how forks behave. Add them after the task description.
 
 ### 6.2 Context Handoff
 
+```bash
+uv run .../fork_terminal.py --type claude --task "continue this work" --with-context context.md
 ```
-/fork claude "continue this work" --with-context
-```
+
+Or say: "Fork a Claude agent with context to continue this work"
 
 Passes a summary of your current work to the forked agent.
 
 ### 6.3 Worktree Isolation
 
+```bash
+uv run .../worktree_manager.py create --branch fork/feature --task "experimental feature"
 ```
-/fork claude "experimental feature" --worktree
-```
+
+Or say: "Fork a Claude agent in a worktree for experimental feature"
 
 Creates a git worktree so changes are isolated from your main branch.
 
 ### 6.4 Skip Output Logging
 
+```bash
+uv run .../fork_terminal.py --type raw --task "quick command" --no-output
 ```
-/fork raw "quick command" --no-output
-```
+
+Or say: "Fork a raw terminal without logging to run quick command"
 
 Doesn't save output to log files. Good for quick, throwaway commands.
 
 ### 6.5 Trusted Automation
 
-```
-/fork claude "automated task" --skip-permissions
+```bash
+uv run .../fork_terminal.py --type claude --task "automated task" --skip-permissions
 ```
 
 Adds `--dangerously-skip-permissions` to Claude. Only use for fully trusted automation.
 
 ### 6.6 New Window (Windows Only)
 
+```bash
+uv run .../fork_terminal.py --type raw --task "my command" --new-window
 ```
-/fork raw "my command" --new-window
-```
+
+Or say: "Fork a raw terminal in a new window to run my command"
 
 Forces Windows Terminal to open a **new window** instead of a new **tab**.
 
@@ -383,9 +393,7 @@ Presets are pre-configured fork patterns for common scenarios.
 **Model:** Sonnet (balanced)
 **Context:** Enabled
 
-```
-/fork bugfix "null pointer in user.email at line 42"
-```
+Say: "Fork a bugfix agent for the null pointer in user.email at line 42"
 
 The agent will:
 1. Find the root cause
@@ -399,9 +407,7 @@ The agent will:
 **Model:** Opus (powerful)
 **Context:** Enabled
 
-```
-/fork research "how does authentication work in this codebase"
-```
+Say: "Fork a research agent to explore how authentication works in this codebase"
 
 The agent will:
 1. Explore the codebase
@@ -414,9 +420,7 @@ The agent will:
 **Model:** Haiku (fast)
 **Context:** Disabled (fresh perspective)
 
-```
-/fork tests
-```
+Say: "Fork to run tests" or "Fork a test agent"
 
 The agent will:
 1. Run the test suite
@@ -430,9 +434,7 @@ The agent will:
 **Model:** Sonnet (balanced)
 **Context:** Enabled
 
-```
-/fork review
-```
+Say: "Fork a review agent" or "Fork to review the code"
 
 The agent will:
 1. Review recent changes
@@ -472,10 +474,9 @@ When you use `--with-context`, the summary includes:
 
 ### 8.3 How to Use
 
-**In Claude Code:**
-```
-/fork claude "fix the auth bug" --with-context
-```
+**In Claude Code (natural language):**
+
+Say: "Fork a Claude agent with context to fix the auth bug"
 
 **Direct tool usage:**
 ```bash
@@ -533,10 +534,9 @@ projects/
 
 ### 9.3 How to Use
 
-**In Claude Code:**
-```
-/fork claude "experimental refactor" --worktree
-```
+**In Claude Code (natural language):**
+
+Say: "Fork a Claude agent in a worktree for experimental refactor"
 
 **Direct tool usage:**
 ```bash
@@ -650,9 +650,11 @@ YYYY-MM-DD_task-description_taskid.md
 
 Logging is **enabled by default**.
 
-To disable for a specific fork:
-```
-/fork raw "quick command" --no-output
+To disable for a specific fork, say: "Fork a raw terminal without logging to run quick command"
+
+Or use the tool directly:
+```bash
+uv run .../fork_terminal.py --type raw --task "quick command" --no-output
 ```
 
 ### 11.3 Viewing Logs

@@ -307,12 +307,12 @@ uv run .claude/skills/fork-terminal/tools/fork_terminal.py --type raw --task "ec
    - `tests` - For running and fixing tests
    - `review` - For code review
 
-2. **In a Claude Code session, you would use:**
+2. **In a Claude Code session, you would say:**
    ```
-   /fork bugfix "null pointer in line 42"
-   /fork research "how does authentication work here"
-   /fork tests
-   /fork review
+   "Fork a bugfix agent for null pointer in line 42"
+   "Fork a research agent to explore how authentication works here"
+   "Fork to run tests"
+   "Fork a review agent"
    ```
 
 3. **Presets automatically set:**
