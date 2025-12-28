@@ -159,7 +159,8 @@ The skill automatically detects and uses the best available terminal:
 | **Linux** | gnome-terminal, konsole, xfce4-terminal | xterm |
 
 **Windows Shell Selection:**
-- **Raw commands** (`--type raw`): Uses **cmd.exe** - supports `&&`, `||`, and other cmd operators
+- **Raw commands without logging** (`--type raw --no-output`): Uses **cmd.exe** - supports `&&`, `||`, and other cmd operators
+- **Raw commands with logging** (`--type raw`): Uses **PowerShell** with `cmd /c` wrapper - enables `Tee-Object` logging while preserving cmd syntax
 - **Claude/Gemini commands**: Uses **PowerShell** - supports output logging with `Tee-Object`
 
 **Windows - Check Windows Terminal:**

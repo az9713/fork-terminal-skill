@@ -1021,19 +1021,27 @@ UV will install these automatically when running.
 
 **Windows** - In `spawn_terminal_windows()`:
 ```python
-# Shell selection (use_cmd parameter)
-if use_cmd:
-    shell_args = ["cmd", "/k", command]      # For raw commands (supports &&)
+# Shell selection depends on logging AND command type
+# When logging is enabled (output_file is set):
+if output_file:
+    if use_cmd:
+        # Raw commands with logging: wrap in PowerShell for Tee-Object
+        escaped_cmd = command.replace("'", "''")
+        command_with_log = f"& {{ cmd /c '{escaped_cmd}' }} 2>&1 | Tee-Object -FilePath '{output_file}'"
+        use_cmd_for_spawn = False  # Force PowerShell
+    else:
+        # Claude/Gemini with logging
+        command_with_log = f"{command} 2>&1 | Tee-Object -FilePath '{output_file}'"
+        use_cmd_for_spawn = False
 else:
-    shell_args = ["powershell", "-NoExit", "-Command", command]  # For Claude/Gemini
+    # No logging: use cmd.exe for raw commands (supports &&)
+    use_cmd_for_spawn = use_cmd
 
-# Keep terminal open
-"powershell", "-NoExit", "-Command", command   # PowerShell
-"cmd", "/k", command                           # cmd.exe
-
-# Close terminal after command
-"powershell", "-Command", command              # PowerShell (remove -NoExit)
-"cmd", "/c", command                           # cmd.exe (use /c instead of /k)
+# Final shell selection
+if use_cmd_for_spawn:
+    shell_args = ["cmd", "/k", command]      # cmd.exe (no logging)
+else:
+    shell_args = ["powershell", "-NoExit", "-Command", command]  # PowerShell
 
 # Force new window instead of tab (use -w -1)
 [terminal_path, "-w", "-1", "new-tab", ...]   # Opens in new window
